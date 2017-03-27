@@ -215,33 +215,61 @@
     },
     // generate cluster for current scroll position
     generate: function (rows, cluster_num) {
-      var opts = this.options,
-        rows_len = rows.length;
-      if (rows_len < opts.rows_in_block) {
-        return {
-          top_offset: 0,
-          bottom_offset: 0,
-          rows_above: 0,
-          rows: rows_len ? rows : this.generateEmptyRow()
+      if (isArray(rows)) {
+        var opts = this.options,
+          rows_len = rows.length;
+        if (rows_len < opts.rows_in_block) {
+          return {
+            top_offset: 0,
+            bottom_offset: 0,
+            rows_above: 0,
+            rows: rows_len ? rows : this.generateEmptyRow()
+          }
         }
-      }
-      var items_start = Math.max((opts.rows_in_cluster - opts.rows_in_block) * cluster_num, 0),
-        items_end = items_start + opts.rows_in_cluster,
-        top_offset = Math.max(items_start * opts.item_height, 0),
-        bottom_offset = Math.max((rows_len - items_end) * opts.item_height, 0),
-        this_cluster_rows = [],
+        var items_start = Math.max((opts.rows_in_cluster - opts.rows_in_block) * cluster_num, 0),
+          items_end = items_start + opts.rows_in_cluster,
+          top_offset = Math.max(items_start * opts.item_height, 0),
+          bottom_offset = Math.max((rows_len - items_end) * opts.item_height, 0),
+          this_cluster_rows = [],
+          rows_above = items_start;
+        if(top_offset < 1) {
+          rows_above++;
+        }
+        for (var i = items_start; i < items_end; i++) {
+          rows[i] && this_cluster_rows.push(rows[i]);
+        }
+        return {
+          top_offset: top_offset,
+          bottom_offset: bottom_offset,
+          rows_above: rows_above,
+          rows: this_cluster_rows
+        }
+      } else {
+        var opts = this.options,
+          response = rows(cluster_num, opts.rows_in_cluster),
+          rows_len = response.length,
+          this_cluster_rows = response.rows;
+        if (rows_len < opts.rows_in_block) {
+          return {
+            top_offset: 0,
+            bottom_offset: 0,
+            rows_above: 0,
+            rows: rows_len ? this_cluster_rows : this.generateEmptyRow()
+          }
+        }
+        var items_start = Math.max((opts.rows_in_cluster - opts.rows_in_block) * cluster_num, 0),
+          top_offset = Math.max(items_start * opts.item_height, 0),
+          bottom_offset = Math.max((rows_len - items_end) * opts.item_height, 0);
         rows_above = items_start;
-      if(top_offset < 1) {
-        rows_above++;
-      }
-      for (var i = items_start; i < items_end; i++) {
-        rows[i] && this_cluster_rows.push(rows[i]);
-      }
-      return {
-        top_offset: top_offset,
-        bottom_offset: bottom_offset,
-        rows_above: rows_above,
-        rows: this_cluster_rows
+        if (top_offset < 1) {
+          rows_above++;
+        }
+        return {
+          top_offset: top_offset,
+          bottom_offset: bottom_offset,
+          rows_above: rows_above,
+          rows: this_cluster_rows
+        }
       }
     },
     renderExtraTag: function(class_name, height) {
